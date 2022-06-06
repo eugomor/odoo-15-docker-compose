@@ -1,7 +1,9 @@
-version: '2'
+version: '3.3'
 services:
   db:
     image: postgres:14
+    networks:
+      - back
     user: root
     environment:
       - POSTGRES_USER=odoo
@@ -11,20 +13,60 @@ services:
     volumes:
         - ./postgresql:/var/lib/postgresql/data
 
+
+ # nginx-proxy:
+  #    ports:
+ #           - '80:80'
+  #          - '443:443'
+  #    container_name: nginx-proxy
+   #   network_mode: reverse-proxy
+    #  volumes:
+     #     - '$HOME/certs:/etc/nginx/certs:ro'
+      #    - /etc/nginx/vhost.d
+       #   - /usr/share/nginx/html
+        #  - '/var/run/docker.sock:/tmp/docker.sock:ro'
+      #labels:
+       #   - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true
+      #image: jwilder/nginx-proxy
+
+  #letsencrypt-nginx-proxy-companion:
+   #     ports:
+    #        - '80:80'
+     #   volumes:
+      #      - '/var/run/docker.sock:/tmp/docker.sock:ro'
+       #     - '$HOME/certs:/etc/nginx/certs:rw'
+        #    - '/var/run/docker.sock:/var/run/docker.sock:ro'
+        #restart: always
+        #logging:
+         #   options:
+          #      max-size: 1g
+        #container_name: nginx-letsencrypt
+        #network_mode: reverse-proxy
+        #image: jrcs/letsencrypt-nginx-proxy-companion
+
   odoo15:
     image: odoo:15
     user: root
     depends_on:
       - db
+    #expose:
+     # - "80"
+    networks:
+      - reverse-proxy
+      - back
     ports:
-      - "10015:8069"
-      - "20015:8072" # live chat
+      - "11015:8069"
+      - "21015:8072" # live chat
     tty: true
     command: --
     environment:
       - HOST=db
       - USER=odoo
       - PASSWORD=odoo15@2021
+      - VIRTUAL_PORT=1234
+      - VIRTUAL_HOST=developer.artespanya.es
+      - LETSENCRYPT_HOST=developer.artespanya.es
+      - LETSENCRYPT_EMAIL=eugomor@gmail.com
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
@@ -32,4 +74,12 @@ services:
       - ./addons:/mnt/extra-addons
       - ./etc:/etc/odoo
     restart: always             # run as a service
+
+networks:
+  reverse-proxy:
+    external:
+      name: reverse-proxy
+  back:
+    driver: bridge
+    
     
